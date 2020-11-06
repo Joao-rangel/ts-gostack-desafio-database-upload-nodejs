@@ -1,5 +1,5 @@
 import { getCustomRepository } from 'typeorm';
-// import AppError from '../errors/AppError';
+import AppError from '../errors/AppError';
 
 import TransactionRepository from '../repositories/TransactionsRepository';
 import Transaction from '../models/Transaction';
@@ -20,6 +20,11 @@ class CreateTransactionService {
   }: Request): Promise<Transaction> {
     const transactionRepository = getCustomRepository(TransactionRepository);
 
+    const balance = await transactionRepository.getBalance();
+
+    if (type === 'outcome' && balance.total < value) {
+      throw new AppError('Insuficient founds', 400);
+    }
     const transaction = transactionRepository.create({
       title,
       type,

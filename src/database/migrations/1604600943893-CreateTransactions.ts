@@ -26,7 +26,7 @@ export default class CreateTransactions1604600943893
           },
           {
             name: 'value',
-            type: 'money', // TODO chek if is numeric
+            type: 'numeric',
             isNullable: false,
           },
           {

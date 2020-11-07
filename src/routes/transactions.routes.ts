@@ -43,12 +43,15 @@ transactionsRouter.post('/', async (request, response) => {
 
   const createTransaction = new CreateTransactionService();
 
-  const transaction = await createTransaction.execute({
-    title,
-    type,
-    value,
-    category_id: categoryObject.id,
-  });
+  const transaction = await createTransaction.execute(
+    {
+      title,
+      type,
+      value,
+      category_id: categoryObject.id,
+    },
+    0,
+  );
 
   return response.json(transaction);
 });
@@ -73,12 +76,34 @@ transactionsRouter.post(
       csvFileName: request.file.filename,
     });
 
+    const totalCsvBalance = importedTransactions.reduce(
+      (total: number, { type, value }: Transaction) => {
+        switch (type) {
+          case 'income':
+            // eslint-disable-next-line no-param-reassign
+            total += +value;
+            break;
+
+          case 'outcome':
+            // eslint-disable-next-line no-param-reassign
+            total -= +value;
+            break;
+
+          default:
+            break;
+        }
+        return total;
+      },
+      0,
+    );
+
     const transactions = await Promise.all(
       importedTransactions.map(async importedTransaction => {
         const createTransaction = new CreateTransactionService();
 
         const newTransaction = await createTransaction.execute(
           importedTransaction,
+          totalCsvBalance,
         );
 
         return newTransaction;

@@ -14,16 +14,16 @@ class TransactionsRepository extends Repository<Transaction> {
     const transactions = await this.find();
 
     const { income, outcome } = transactions.reduce(
-      (total: Omit<Balance, 'total'>, transaction: Transaction) => {
-        switch (transaction.type) {
+      (total: Omit<Balance, 'total'>, { type, value }: Transaction) => {
+        switch (type) {
           case 'income':
             // eslint-disable-next-line no-param-reassign
-            total.income += +transaction.value;
+            total.income += +value;
             break;
 
           case 'outcome':
             // eslint-disable-next-line no-param-reassign
-            total.outcome += +transaction.value;
+            total.outcome += +value;
             break;
 
           default:

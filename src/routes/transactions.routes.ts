@@ -1,13 +1,17 @@
 import { Router } from 'express';
-
+import multer from 'multer';
 import { getCustomRepository } from 'typeorm';
+import uploadConfig from '../config/upload';
+
 import TransactionsRepository from '../repositories/TransactionsRepository';
 import CreateTransactionService from '../services/CreateTransactionService';
 import FindOrCreateCategoryService from '../services/FindOrCreateCategoryService';
 import DeleteTransactionService from '../services/DeleteTransactionService';
 import ImportTransactionsService from '../services/ImportTransactionsService';
+import Transaction from '../models/Transaction';
 
 const transactionsRouter = Router();
+const upload = multer(uploadConfig);
 
 transactionsRouter.get('/', async (request, response) => {
   const transactionsRepository = getCustomRepository(TransactionsRepository);
@@ -59,24 +63,30 @@ transactionsRouter.delete('/:id', async (request, response) => {
   return response.status(204).send();
 });
 
-transactionsRouter.post('/import', async (request, response) => {
-  const importTransaction = new ImportTransactionsService();
+transactionsRouter.post(
+  '/import',
+  upload.single('file'),
+  async (request, response) => {
+    const importTransaction = new ImportTransactionsService();
 
-  const importedTransactions = await importTransaction.execute();
+    const importedTransactions = await importTransaction.execute({
+      csvFileName: request.file.filename,
+    });
 
-  const transactions = await Promise.all(
-    importedTransactions.map(async importedTransaction => {
-      const createTransaction = new CreateTransactionService();
+    const transactions = await Promise.all(
+      importedTransactions.map(async importedTransaction => {
+        const createTransaction = new CreateTransactionService();
 
-      const newTransaction = await createTransaction.execute(
-        importedTransaction,
-      );
+        const newTransaction = await createTransaction.execute(
+          importedTransaction,
+        );
 
-      return newTransaction;
-    }),
-  );
+        return newTransaction;
+      }),
+    );
 
-  return response.json(transactions);
-});
+    return response.json(transactions);
+  },
+);
 
 export default transactionsRouter;

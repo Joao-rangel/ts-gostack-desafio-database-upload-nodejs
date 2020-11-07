@@ -1,12 +1,19 @@
 import fs from 'fs';
 import path from 'path';
+
+import uploadConfig from '../config/upload';
 import Transaction from '../models/Transaction';
 import FindOrCreateCategoryService from './FindOrCreateCategoryService';
 
+interface Request {
+  csvFileName: string;
+}
+
 class ImportTransactionsService {
-  async execute(): Promise<Transaction[]> {
-    const filePath = path.resolve(__dirname, '..', '..', 'tmp', 'file.csv');
-    const fileText = fs.readFileSync(filePath, 'utf-8');
+  async execute({ csvFileName }: Request): Promise<Transaction[]> {
+    const csvFilePath = path.join(uploadConfig.directory, csvFileName);
+
+    const fileText = fs.readFileSync(csvFilePath, 'utf-8');
 
     const [titles, ...rows] = fileText.split('\n');
 
@@ -14,6 +21,7 @@ class ImportTransactionsService {
 
     const objectTransactions = rows.map(row => {
       const transactionValues = row.split(', ');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return transactionKeys.reduce((transaction: any, currentKey, index) => {
         // eslint-disable-next-line no-param-reassign
         transaction[currentKey] = transactionValues[index];
@@ -22,6 +30,7 @@ class ImportTransactionsService {
       }, {});
     });
 
+    // eslint-disable-next-line consistent-return
     const validTransactions = objectTransactions.filter(transaction => {
       const { type } = transaction;
       if (type === 'outcome' || type === 'income') {

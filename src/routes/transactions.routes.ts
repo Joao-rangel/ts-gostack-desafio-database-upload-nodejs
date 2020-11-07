@@ -5,7 +5,7 @@ import TransactionsRepository from '../repositories/TransactionsRepository';
 import CreateTransactionService from '../services/CreateTransactionService';
 import FindOrCreateCategoryService from '../services/FindOrCreateCategoryService';
 import DeleteTransactionService from '../services/DeleteTransactionService';
-// import ImportTransactionsService from '../services/ImportTransactionsService';
+import ImportTransactionsService from '../services/ImportTransactionsService';
 
 const transactionsRouter = Router();
 
@@ -60,7 +60,23 @@ transactionsRouter.delete('/:id', async (request, response) => {
 });
 
 transactionsRouter.post('/import', async (request, response) => {
-  // TODO
+  const importTransaction = new ImportTransactionsService();
+
+  const importedTransactions = await importTransaction.execute();
+
+  const transactions = await Promise.all(
+    importedTransactions.map(async importedTransaction => {
+      const createTransaction = new CreateTransactionService();
+
+      const newTransaction = await createTransaction.execute(
+        importedTransaction,
+      );
+
+      return newTransaction;
+    }),
+  );
+
+  return response.json(transactions);
 });
 
 export default transactionsRouter;

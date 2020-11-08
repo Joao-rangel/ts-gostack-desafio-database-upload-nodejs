@@ -14,22 +14,22 @@ class TransactionsRepository extends Repository<Transaction> {
     const transactions = await this.find();
 
     const { income, outcome } = transactions.reduce(
-      (total: Omit<Balance, 'total'>, { type, value }: Transaction) => {
+      (acumulator: Omit<Balance, 'total'>, { type, value }: Transaction) => {
         switch (type) {
           case 'income':
             // eslint-disable-next-line no-param-reassign
-            total.income += +value;
+            acumulator.income += Number(value);
             break;
 
           case 'outcome':
             // eslint-disable-next-line no-param-reassign
-            total.outcome += +value;
+            acumulator.outcome += Number(value);
             break;
 
           default:
             break;
         }
-        return total;
+        return acumulator;
       },
       {
         income: 0,
@@ -39,9 +39,7 @@ class TransactionsRepository extends Repository<Transaction> {
 
     const total = income - outcome;
 
-    const balance = { income, outcome, total };
-
-    return balance;
+    return { income, outcome, total };
   }
 }
 

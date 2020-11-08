@@ -3,7 +3,7 @@ import path from 'path';
 
 import uploadConfig from '../config/upload';
 import Transaction from '../models/Transaction';
-import FindOrCreateCategoryService from './FindOrCreateCategoryService';
+import CreateTransactionService from './CreateTransactionService';
 
 interface Request {
   csvFileName: string;
@@ -38,21 +38,35 @@ class ImportTransactionsService {
       }
     });
 
+    const totalCsvBalance = validTransactions.reduce(
+      (total: number, { type, value }: Transaction) => {
+        switch (type) {
+          case 'income':
+            // eslint-disable-next-line no-param-reassign
+            total += +value;
+            break;
+
+          case 'outcome':
+            // eslint-disable-next-line no-param-reassign
+            total -= +value;
+            break;
+
+          default:
+            break;
+        }
+        return total;
+      },
+      0,
+    );
+
     const transactions = await Promise.all(
       validTransactions.map(async validTransaction => {
-        const { title, type, value, category } = validTransaction;
-        const findOrCreateCategory = new FindOrCreateCategoryService();
+        const createTransaction = new CreateTransactionService();
 
-        const categoryObject = await findOrCreateCategory.execute({
-          category,
-        });
-
-        const transaction = {
-          title,
-          type,
-          value,
-          category_id: categoryObject.id,
-        } as Transaction;
+        const transaction = await createTransaction.execute(
+          validTransaction,
+          totalCsvBalance,
+        );
 
         return transaction;
       }),

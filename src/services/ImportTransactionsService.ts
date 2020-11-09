@@ -1,19 +1,13 @@
 import fs from 'fs';
-import path from 'path';
 
-import uploadConfig from '../config/upload';
 import Transaction from '../models/Transaction';
 import CreateTransactionService from './CreateTransactionService';
 
-interface Request {
-  csvFileName: string;
-}
-
 class ImportTransactionsService {
-  async execute({ csvFileName }: Request): Promise<Transaction[]> {
-    const csvFilePath = path.join(uploadConfig.directory, csvFileName);
-
+  async execute(csvFilePath: string): Promise<Transaction[]> {
     const fileText = fs.readFileSync(csvFilePath, 'utf-8');
+
+    await fs.promises.unlink(csvFilePath);
 
     const [titles, ...rows] = fileText.split('\n');
 
@@ -32,8 +26,8 @@ class ImportTransactionsService {
 
     // eslint-disable-next-line consistent-return
     const validTransactions = objectTransactions.filter(transaction => {
-      const { type } = transaction;
-      if (type === 'outcome' || type === 'income') {
+      const { type, title, value } = transaction;
+      if (title && value && (type === 'income' || type === 'outcome')) {
         return transaction;
       }
     });

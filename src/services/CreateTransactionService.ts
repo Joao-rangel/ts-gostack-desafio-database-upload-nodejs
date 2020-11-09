@@ -13,20 +13,18 @@ interface Request {
 }
 
 class CreateTransactionService {
-  public async execute(
-    { title, type, value, category }: Request,
-    totalCsvBalance: number,
-  ): Promise<Transaction> {
+  public async execute({
+    title,
+    type,
+    value,
+    category,
+  }: Request): Promise<Transaction> {
     const transactionRepository = getCustomRepository(TransactionRepository);
     const categoryRepository = getRepository(Category);
 
     const { total } = await transactionRepository.getBalance();
 
-    if (totalCsvBalance) {
-      if (total + totalCsvBalance < 0) {
-        throw new AppError('Insuficient founds', 400);
-      }
-    } else if (type === 'outcome' && total - value < 0) {
+    if (type === 'outcome' && total < value) {
       throw new AppError('Insuficient founds', 400);
     }
 

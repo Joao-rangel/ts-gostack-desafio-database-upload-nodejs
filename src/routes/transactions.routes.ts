@@ -21,7 +21,7 @@ transactionsRouter.get('/', async (request, response) => {
 
   const balance = await transactionsRepository.getBalance();
 
-  return response.json({ transactions, balance });
+  return response.json({ balance, transactions });
 });
 
 transactionsRouter.post('/', async (request, response) => {
@@ -29,15 +29,12 @@ transactionsRouter.post('/', async (request, response) => {
 
   const createTransaction = new CreateTransactionService();
 
-  const transaction = await createTransaction.execute(
-    {
-      title,
-      type,
-      value,
-      category,
-    },
-    0,
-  );
+  const transaction = await createTransaction.execute({
+    title,
+    type,
+    value,
+    category,
+  });
 
   return response.json(transaction);
 });
